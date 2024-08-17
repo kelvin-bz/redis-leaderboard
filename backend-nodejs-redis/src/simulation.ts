@@ -1,6 +1,4 @@
-import Redis from 'ioredis';
-
-const redis = new Redis();
+import { LeaderboardManager } from './LeaderboardManager';
 
 const players = [
   'Alice', 'Bob', 'Charlie', 'David', 'Eve',
@@ -16,42 +14,32 @@ function getRandomScore(): number {
   return Math.floor(Math.random() * 1001) - 500;
 }
 
-async function updateRandomScore() {
+async function updateRandomScore(leaderboardManager: LeaderboardManager) {
   const player = getRandomPlayer();
   const scoreChange = getRandomScore();
 
   try {
-    // Get the current score of the player
-    const currentScore = await redis.zscore('leaderboard', player);
-    let newScore = parseInt(currentScore || '0') + scoreChange;
-
-    // Ensure the score doesn't go below 0
-    newScore = Math.max(newScore, 0);
-
-    // Update the player's score
-    await redis.zadd('leaderboard', newScore, player);
-    console.log(`Updated score for ${player}: ${currentScore} -> ${newScore} (${scoreChange > 0 ? '+' : ''}${scoreChange})`);
+    await leaderboardManager.updatePlayerScore(player, scoreChange);
+    console.log(`Updated score for ${player}: ${scoreChange > 0 ? '+' : ''}${scoreChange}`);
 
     // Log current leaderboard state
-    const leaderboard = await redis.zrevrange('leaderboard', 0, -1, 'WITHSCORES');
+    const leaderboard = await leaderboardManager.getLeaderboard();
     console.log('Current Leaderboard:');
-    for (let i = 0; i < leaderboard.length; i += 2) {
-      console.log(`${leaderboard[i]}: ${leaderboard[i + 1]}`);
-    }
+    leaderboard.forEach(entry => {
+      console.log(`${entry.player}: ${entry.score}`);
+    });
     console.log('------------------------');
   } catch (error) {
     console.error('Error updating score:', error);
   }
 }
 
-function startSimulation() {
+function startSimulation(leaderboardManager: LeaderboardManager) {
   // Initialize all players with a score of 1000
-  players.forEach(async (player) => {
-    await redis.zadd('leaderboard', 1000, player);
-  });
+  leaderboardManager.initializePlayers(players, 1000);
 
   // Update scores every 2 seconds
-  setInterval(updateRandomScore, 2000);
+  setInterval(() => updateRandomScore(leaderboardManager), 2000);
 }
 
 export { startSimulation };
