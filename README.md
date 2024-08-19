@@ -52,6 +52,7 @@ The backend server will start on `http://localhost:3000` by default.
 
 3. Create a `.env` file in the frontend directory and add your backend WebSocket URL:
    ```
+   PORT=3001
    REACT_APP_BACKEND_URL=ws://localhost:3000
    ```
 
@@ -60,7 +61,7 @@ The backend server will start on `http://localhost:3000` by default.
    npm start
    ```
 
-The React application will start and be available at `http://localhost:3000` by default.
+The React application will start and be available at `http://localhost:3001` by default.
 
 ## Usage
 
@@ -73,11 +74,6 @@ Once both the backend and frontend are running:
 
 
 ## Backend 
-
-### API Endpoints
-
-- `POST /score`: Add a score for a player
-- `GET /leaderboard`: Retrieve the current leaderboard
 
 
 ### LeaderboardManager
@@ -182,7 +178,87 @@ await this.redis.zincrby('leaderboard', scoreIncrease, player);
 await this.redis.zincrby('leaderboard', -scoreDecrease, player);
 ```
 
-#### WebSocket Integration
+### Leaderboard Simulation
+
+The project includes a simulation feature to demonstrate the real-time functionality of the leaderboard system. This simulation randomly increases and decreases scores for a set of predefined players, allowing you to observe the leaderboard updates in real-time.
+
+- The simulation uses a predefined list of 10 players.
+- Every 2 seconds, the simulation performs the following actions:
+   1. Selects a random player from the list.
+   2. Generates a random score change between 1 and 500.
+   3. Randomly decides to either increase or decrease the player's score.
+   4. Calls the appropriate `increaseScore` or `decreaseScore` function on the LeaderboardManager.
+   5. Logs the action and the updated leaderboard to the console.
+
+
+The simulation is implemented in a separate file, typically named `simulation.ts`. Here's an overview of its key components:
+
+```typescript
+import { LeaderboardManager } from './LeaderboardManager';
+
+const players = [
+  'Alice', 'Bob', 'Charlie', 'David', 'Eve',
+  'Frank', 'Grace', 'Henry', 'Isabella', 'Jack'
+];
+
+function getRandomPlayer(): string {
+  return players[Math.floor(Math.random() * players.length)];
+}
+
+function getRandomScore(): number {
+  return Math.floor(Math.random() * 500) + 1;
+}
+
+async function updateRandomScore(leaderboardManager: LeaderboardManager) {
+  const player = getRandomPlayer();
+  const scoreChange = getRandomScore();
+  const isIncrease = Math.random() < 0.5;
+
+  try {
+    if (isIncrease) {
+      await leaderboardManager.increaseScore(player, scoreChange);
+      console.log(`Increased score for ${player}: +${scoreChange}`);
+    } else {
+      await leaderboardManager.decreaseScore(player, scoreChange);
+      console.log(`Decreased score for ${player}: -${scoreChange}`);
+    }
+
+    const leaderboard = await leaderboardManager.getLeaderboard();
+    console.log('Current Leaderboard:');
+    leaderboard.forEach(entry => {
+      console.log(`${entry.player}: ${entry.score}`);
+    });
+    console.log('------------------------');
+  } catch (error) {
+    console.error('Error updating score:', error);
+  }
+}
+
+export async function startSimulation(leaderboardManager: LeaderboardManager) {
+  // Initialize all players with a score of 1000
+  await leaderboardManager.initializePlayers(players);
+
+  // Update scores every 2 seconds
+  setInterval(() => updateRandomScore(leaderboardManager), 2000);
+}
+```
+
+The simulation is started automatically when the server is launched. In the main application file, you'll find:
+
+```typescript
+import { startSimulation } from './simulation';
+
+// ... (server setup code)
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  startSimulation(leaderboardManager);
+  console.log('Simulation started');
+});
+```
+
+
+### WebSocket Integration
 
 The LeaderboardManager uses WebSocket to broadcast real-time updates:
 
@@ -196,17 +272,6 @@ this.wss.clients.forEach((client) => {
   }
 });
 ```
-
-
-## Contributing
-
-Contributions to improve the application are welcome. Please follow these steps:
-
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## License
 
