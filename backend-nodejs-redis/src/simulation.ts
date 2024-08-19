@@ -10,17 +10,23 @@ function getRandomPlayer(): string {
 }
 
 function getRandomScore(): number {
-  // Generate a score between -500 and 500 for more significant changes
-  return Math.floor(Math.random() * 1001) - 500;
+  // Generate a score between 1 and 500 for more significant changes
+  return Math.floor(Math.random() * 500) + 1;
 }
 
 async function updateRandomScore(leaderboardManager: LeaderboardManager) {
   const player = getRandomPlayer();
   const scoreChange = getRandomScore();
+  const isIncrease = Math.random() < 0.5;
 
   try {
-    await leaderboardManager.updatePlayerScore(player, scoreChange);
-    console.log(`Updated score for ${player}: ${scoreChange > 0 ? '+' : ''}${scoreChange}`);
+    if (isIncrease) {
+      await leaderboardManager.increaseScore(player, scoreChange);
+      console.log(`Increased score for ${player}: +${scoreChange}`);
+    } else {
+      await leaderboardManager.decreaseScore(player, scoreChange);
+      console.log(`Decreased score for ${player}: -${scoreChange}`);
+    }
 
     // Log current leaderboard state
     const leaderboard = await leaderboardManager.getLeaderboard();
@@ -34,9 +40,9 @@ async function updateRandomScore(leaderboardManager: LeaderboardManager) {
   }
 }
 
-function startSimulation(leaderboardManager: LeaderboardManager) {
+async function startSimulation(leaderboardManager: LeaderboardManager) {
   // Initialize all players with a score of 1000
-  leaderboardManager.initializePlayers(players, 1000);
+  await leaderboardManager.initializePlayers(players);
 
   // Update scores every 2 seconds
   setInterval(() => updateRandomScore(leaderboardManager), 2000);
