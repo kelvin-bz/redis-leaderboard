@@ -272,7 +272,32 @@ this.wss.clients.forEach((client) => {
   }
 });
 ```
+### API Endpoints
 
+The backend server provides the following API endpoints
+
+```bash
+### Base URL
+@baseUrl = http://localhost:3000
+
+### Get Leaderboard
+GET {{baseUrl}}/leaderboard
+Content-Type: application/json
+
+### Get Leaderboard with custom count
+GET {{baseUrl}}/leaderboard?count=5
+Content-Type: application/json
+
+### Add Score
+POST {{baseUrl}}/score/increase
+Content-Type: application/json
+
+{
+    "player": "Grace",
+    "score": 3300
+}
+
+```
 ## License
 
 This project is open source and available under the [MIT License](LICENSE).

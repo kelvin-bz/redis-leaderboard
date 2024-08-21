@@ -10,7 +10,7 @@ GET {{baseUrl}}/leaderboard?count=5
 Content-Type: application/json
 
 ### Add Score
-POST {{baseUrl}}/score
+POST {{baseUrl}}/score/increase
 Content-Type: application/json
 
 {
@@ -18,16 +18,4 @@ Content-Type: application/json
     "score": 3300
 }
 
-### WebSocket Connection
-# To connect via WebSocket, use the following URL in your WebSocket client:
-# ws://localhost:3000
-#
-# The server will send messages in the following format:
-# {
-#   "type": "leaderboard_update",
-#   "leaderboard": [
-#     { "player": "Alice", "score": 1000 },
-#     { "player": "Bob", "score": 900 },
-#     ...
-#   ]
-# }
+
